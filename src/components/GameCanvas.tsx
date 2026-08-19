@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { getItem } from '../services/storage';
-import { GHOST_PALETTES } from '../data/palettes';
+import { getPalette } from '../data/palettes';
 
 interface GameCanvasProps {
   width?: number;
@@ -72,7 +72,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ width = 800, height = 60
     if (!ctx) return;
 
     // Get colorblind preference from storage
-    const isColorblindMode = getItem('colorblind_palette_enabled') === 'true';
+    const isColorblindMode = getItem('colorblind_palette_enabled', 'false') === 'true';
 
     // Clear canvas
     ctx.fillStyle = '#000';
@@ -80,19 +80,19 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ width = 800, height = 60
 
     // Example: Draw a test ghost to verify palette selection
     // This is a placeholder - the actual game loop will render the full game
-    const ghostPalette = isColorblindMode ? GHOST_PALETTES.colorblind : GHOST_PALETTES.default;
+    const ghostPalette = getPalette(isColorblindMode);
 
     // Draw a simple test pattern showing which palette is active
-    ctx.fillStyle = ghostPalette.blinky;
+    ctx.fillStyle = ghostPalette.blinky.primary;
     ctx.fillRect(10, 10, 30, 30);
 
-    ctx.fillStyle = ghostPalette.pinky;
+    ctx.fillStyle = ghostPalette.pinky.primary;
     ctx.fillRect(50, 10, 30, 30);
 
-    ctx.fillStyle = ghostPalette.inky;
+    ctx.fillStyle = ghostPalette.inky.primary;
     ctx.fillRect(90, 10, 30, 30);
 
-    ctx.fillStyle = ghostPalette.clyde;
+    ctx.fillStyle = ghostPalette.clyde.primary;
     ctx.fillRect(130, 10, 30, 30);
 
     // Display mode indicator
