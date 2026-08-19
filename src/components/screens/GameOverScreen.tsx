@@ -1,66 +1,90 @@
-import { useState } from 'react';
+import { useState, type FormEvent, type RefObject } from 'react';
 import { useAutoFocus } from '../../hooks/useAutoFocus';
 import '../../styles/focus.css';
 
 export interface GameOverScreenProps {
+  /** The player's final score for the completed run. */
   score: number;
+  /** Whether the final score qualifies for the top-10 high score list. */
   isHighScore: boolean;
-  onSubmitInitials: (initials: string) => void;
+  /** Invoked when the player chooses to restart (returns to Start/Countdown). */
   onRestart: () => void;
+  /** Invoked with the validated 3-letter initials once submitted (only relevant when isHighScore is true). */
+  onSubmitInitials?: (initials: string) => void;
 }
 
-/**
- * Game Over screen. When the run qualifies as a high score, a 3-letter
- * initials input plus Submit button are shown first in tab order; the
- * Restart button is always reachable and keyboard-operable.
- */
+const INITIALS_LENGTH = 3;
+const INITIALS_PATTERN = /^[A-Za-z]{3}$/;
+
 export function GameOverScreen({
   score,
   isHighScore,
-  onSubmitInitials,
   onRestart,
+  onSubmitInitials,
 }: GameOverScreenProps): JSX.Element {
   const [initials, setInitials] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   const primaryRef = useAutoFocus<HTMLInputElement | HTMLButtonElement>();
 
-  const handleSubmit = (event: React.FormEvent): void => {
+  const showInitialsForm = isHighScore && !submitted;
+  const showRestart = !isHighScore || submitted;
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
-    if (initials.trim().length > 0) {
-      onSubmitInitials(initials.trim().toUpperCase().slice(0, 3));
+    const normalized = initials.trim().toUpperCase();
+    if (!INITIALS_PATTERN.test(normalized)) {
+      setError(`Enter exactly ${INITIALS_LENGTH} letters.`);
+      return;
     }
+    setError(null);
+    setSubmitted(true);
+    onSubmitInitials?.(normalized);
   };
 
   return (
-    <div className="screen" data-testid="game-over-screen">
-      <h2>Game Over</h2>
-      <p>Score: {score}</p>
-      {isHighScore ? (
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+    <div className="game-over-screen" role="dialog" aria-labelledby="game-over-heading">
+      <h1 id="game-over-heading">Game Over</h1>
+      <p data-testid="final-score">Final Score: {score}</p>
+
+      {showInitialsForm && (
+        <form onSubmit={handleSubmit} aria-label="High score initials entry">
           <label htmlFor="initials-input">New high score! Enter your initials:</label>
           <input
             id="initials-input"
-            ref={primaryRef as React.RefObject<HTMLInputElement>}
-            className="focusable"
+            ref={primaryRef as RefObject<HTMLInputElement>}
+            className="focus-visible"
             type="text"
-            maxLength={3}
+            maxLength={INITIALS_LENGTH}
             value={initials}
-            onChange={(event) => setInitials(event.target.value)}
-            autoFocus
+            onChange={(event) => setInitials(event.target.value.toUpperCase())}
+            required
+            pattern="[A-Za-z]{3}"
+            aria-required="true"
+            aria-describedby={error ? 'initials-error' : undefined}
           />
-          <button type="submit" className="focusable primary-button">
+          {error && (
+            <p id="initials-error" role="alert">
+              {error}
+            </p>
+          )}
+          <button type="submit" className="focus-visible">
             Submit
           </button>
         </form>
-      ) : null}
-      <button
-        ref={isHighScore ? undefined : (primaryRef as React.RefObject<HTMLButtonElement>)}
-        type="button"
-        className="focusable"
-        onClick={onRestart}
-        autoFocus={!isHighScore}
-      >
-        Play Again
-      </button>
+      )}
+
+      {showRestart && (
+        <button
+          type="button"
+          ref={showInitialsForm ? undefined : (primaryRef as RefObject<HTMLButtonElement>)}
+          className="focus-visible"
+          onClick={onRestart}
+        >
+          Play Again
+        </button>
+      )}
     </div>
   );
 }
