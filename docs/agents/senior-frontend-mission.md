@@ -1,37 +1,19 @@
-# Senior Frontend Developer Mission Report — ASSIGN-040
+# Senior Frontend Developer Mission Report — ASSIGN-009
 
 **Agent**: senior-frontend  
-**Generated**: 2026-08-19T14:11:10.158Z
+**Generated**: 2026-08-19T14:37:42.944Z
 
 ---
 
-## Branch: pacmanclaude4/pacman/feature/us-031-035-accessibility-perf-integration
+## Branch: pacmanclaude4/pacman/feature/us-003-005-input-controls
 
-## Assignment: ASSIGN-040
+## Assignment: ASSIGN-009
 
 ## Files Changed
 
-- **created** `package.json` — Bootstrapped project package.json with Vite/React/TS/Vitest/Playwright scripts matching the repo contract (dev, build, test, test:e2e, lint).
-- **created** `tsconfig.json` — Base TypeScript config for the React + Vite app.
-- **created** `vite.config.ts` — Vite config with React plugin and Vitest (jsdom) test environment.
-- **created** `vitest.setup.ts` — Vitest setup importing jest-dom matchers.
-- **created** `index.html` — App HTML shell mounting src/main.tsx.
-- **created** `src/types/index.ts` — Shared contract type stubs (Tile, Direction, GhostMode, GameConfig, LevelConfig, HighScoreEntry, GameSnapshot) required by InputManager and the rest of the app.
-- **created** `src/styles/focus.css` — Global visible focus-indicator styles (:focus-visible outlines) to be imported by every screen component for TASK-085.
-- **created** `src/input/InputManager.ts` — Implements MOD-INPUT: InputManager class + useInput hook. Maps arrow keys/WASD to Direction, Escape/P toggles pause, M toggles mute (TASK-086).
-- **created** `MISSING_WORK.md` — Documents remaining incomplete work (screen components, tests, e2e spec) after write-tool budget was exhausted mid-assignment.
+- **created** `src/input/InputManager.test.ts` — Unit tests for InputManager keyboard normalization and useInput hook: arrow key mapping (US-003#1), WASD parity with arrow keys (US-003#2), rapid alternating/diagonal-style key press handling (US-003#3), key-release (keyup no-op) behavior, detach/unmount cleanup, and pause/mute key bindings. Tests exercise the InputManager class and useInput hook via renderHook from @testing-library/react.
 
 ## Notes
 
-IMPORTANT: This assignment could NOT be completed — the write_file tool budget (25 calls) was exhausted after bootstrapping baseline project infra (package.json/tsconfig/vite.config/index.html) that did not previously exist in the empty repo, plus src/types/index.ts and src/input/InputManager.ts. TASK-085 (screen components with focus styles: StartScreen, CountdownScreen, PauseOverlay, LevelCompleteScreen, GameOverScreen, App.tsx, main.tsx, HUD, GameCanvas, TouchControls) and TASK-087 (Playwright e2e keyboard-navigation test) were NOT implemented. No unit or e2e tests were written, so no US-031 acceptance criteria currently have a tagged passing test ([US-031#1], [US-031#2], [US-031#3] are all outstanding). `npm test`/`vitest run` was not executed because shell execution is disabled in this environment. A follow-up assignment is required to: (1) create the App shell and all screen components importing src/styles/focus.css with proper tabIndex/initial-focus management, (2) add InputManager unit tests, and (3) add the Playwright keyboard-only navigation e2e spec. See MISSING_WORK.md for full detail. Per critical_rules, I am reporting this honestly rather than fabricating completed tests or files.
+The contract-declared module MOD-INPUT (src/input/InputManager.ts, exporting both the InputManager class and the useInput hook) was already fully implemented on this branch prior to this assignment, matching TASK-014 and TASK-015's requirements (arrow key + WASD normalization into a single desired-direction signal, pause/mute key bindings, and a React hook that subscribes without per-frame re-renders). Per the repo contract's authority and the rule against creating a second implementation of an already-declared module, I did not create duplicate files at the alternate paths mentioned in the assignment description (src/engine/InputManager.ts, src/hooks/useInput.ts). Instead, for TASK-016 I added comprehensive unit tests at src/input/InputManager.test.ts covering all three US-003 acceptance criteria (tagged accordingly) plus edge cases: diagonal/overlapping key presses (last key wins), key release (keyup is a no-op preserving the last direction), listener detachment on manager.attach()/hook unmount, and pause/mute bindings (Escape/P, M). Shell command execution is disabled in this sandbox (SHELL_ALLOW_HOST=false), so I could not execute `npx vitest run` to confirm a green run; I instead manually cross-verified every API call in the test file (simulateKeyDown, attach, getDirection, onDirectionChange, onTogglePause, onToggleMute, useInput's returned {direction}) against the actual InputManager.ts source and the frozen Direction type in src/types/index.ts to ensure correctness.
 
-## Diagram
-
-```mermaid
-flowchart TD
-  A[InputManager.ts] -->|useInput hook| B[Future: App.tsx]
-  A -->|Escape/P| C[onTogglePause]
-  A -->|M| D[onToggleMute]
-  A -->|Arrows/WASD| E[onDirectionChange]
-  F[focus.css] -.needs wiring.-> G[Future screen components]
-```
