@@ -1,21 +1,20 @@
-# Senior Backend Developer Mission Report — ASSIGN-019
+# Senior Backend Developer Mission Report — ASSIGN-021
 
 **Agent**: senior-backend  
-**Generated**: 2026-08-19T14:58:13.032Z
+**Generated**: 2026-08-19T14:59:43.184Z
 
 ---
 
 ## Branch: pacmanclaude4/pacman/feature/us-013-019-scoring-lives-leveling
 
-## Assignment: ASSIGN-019
+## Assignment: ASSIGN-021
 
 ## Files Changed
 
-- **created** `src/engine/fruit/FruitManager.ts` — Implements FruitManager class tracking dots-eaten thresholds (~70, ~170) to trigger bonus fruit spawn events, plus FRUIT_CONFIG_TABLE/getFruitConfigForLevel level-specific fruit type & points mapping (cherry/100, strawberry/300, orange/500, etc., escalating and repeating at cap).
-- **created** `src/engine/fruit/FruitManager.test.ts` — Vitest suite covering AC1 (spawn at ~70 dots), AC2 (second spawn at ~170 dots, no double-fire), and AC3 (level-specific fruit type/points mapping incl. clamping/repeat-at-cap behavior), tagged [US-013#1], [US-013#2], [US-013#3].
-- **created** `.assign-019-note.md` — Documents why FruitManager was left as a standalone, importable module rather than wired directly into GameLoop.ts/levelConfig.ts (those modules are owned by other in-flight assignments and do not yet exist in the workspace).
+- **created** `src/services/ScoreService.ts` — Implemented ScoreService aggregating dot (10pt), pellet (50pt), ghost-combo (200/400/800/1600), and fruit points into a subscribable running total, plus loadHighScores/saveHighScore/isHighScore backed by localStorage per the frozen HighScoreEntry type.
+- **created** `src/services/ScoreService.test.ts` — Unit tests for score accumulation across dots, pellets, ghost combo, and fruit; synchronous subscriber notification within the same tick; combo reset/cap behavior; and high score persistence/truncation. Includes [US-015#1], [US-015#2], [US-015#3] tagged tests.
 
 ## Notes
 
-Implemented ASSIGN-019 as a self-contained src/engine/fruit/FruitManager.ts module (dot-count spawn triggers + level->fruit type/points table) since GameLoop.ts and levelConfig.ts are declared as import-only modules owned by other assignments and don't exist yet in this workspace. FruitManager exports FruitManager class, getFruitConfigForLevel, FRUIT_CONFIG_TABLE, and FRUIT_SPAWN_DOT_THRESHOLDS for the GameLoop-owning assignment to wire in. All 3 acceptance criteria for US-013 have tagged unit tests. NOTE: the sandbox for this session has shell execution disabled (SHELL_ALLOW_HOST=false), so `npm test` could not be executed to confirm a green run; code was carefully reviewed by hand against strict TypeScript rules (noUnusedLocals/Params) and existing project conventions (see src/data/palettes.ts/test.ts pattern) and should pass cleanly — please re-run `npm test` in CI to confirm.
+Implemented ASSIGN-021 (TASK-046, TASK-048). ScoreService.ts exposes the contractually required exports (loadHighScores, saveHighScore, isHighScore) plus the new ScoreService class, getGhostComboPoints helper, and DOT_POINTS/PELLET_POINTS/GHOST_COMBO_POINTS constants for use by the Game Loop Engine (not in scope for this assignment) to wire dot/pellet/ghost/fruit eating events into score updates. Used existing storage.ts getItem/setItem and the frozen HighScoreEntry type without modification. Could not execute `npm test` because host shell execution is disabled in this environment (SHELL_ALLOW_HOST=false); implementation and tests were manually cross-verified against src/types/index.ts, src/services/storage.ts, and existing test conventions (storage.test.ts, FruitManager.test.ts) for correctness.
 
