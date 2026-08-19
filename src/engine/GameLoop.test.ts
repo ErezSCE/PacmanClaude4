@@ -130,3 +130,62 @@ describe('GameLoop scatter/chase alternation', () => {
     expect(loop.getPhase()).toBe('scatter');
   });
 });
+
+describe('GameLoop scared mode on power pellet consumption', () => {
+  it('[US-009#1] reverses the direction of every active ghost immediately', () => {
+    const ghosts = makeGhosts();
+    for (const ghost of ghosts) {
+      ghost.setDirection('left');
+    }
+    const loop = new GameLoop({ level: 1, ghosts, getPacManState: makePacmanState });
+
+    loop.onPowerPelletEaten();
+
+    for (const ghost of ghosts) {
+      expect(ghost.direction).toBe('right');
+    }
+  });
+
+  it('[US-009#2] switches all active ghosts to scared mode with reduced speed', () => {
+    const ghosts = makeGhosts();
+    const loop = new GameLoop({ level: 1, ghosts, getPacManState: makePacmanState });
+
+    loop.onPowerPelletEaten();
+
+    for (const ghost of ghosts) {
+      expect(ghost.mode).toBe('scared');
+      expect(ghost.speed).toBeLessThan(1);
+    }
+  });
+
+  it('[US-009#3] does not affect ghosts that are currently eaten (eyes returning home)', () => {
+    const ghosts = makeGhosts();
+    const eatenGhost = ghosts[2];
+    eatenGhost.setMode('eaten');
+    eatenGhost.setDirection('up');
+    const loop = new GameLoop({ level: 1, ghosts, getPacManState: makePacmanState });
+
+    loop.onPowerPelletEaten();
+
+    expect(eatenGhost.mode).toBe('eaten');
+    expect(eatenGhost.direction).toBe('up');
+    for (const ghost of ghosts) {
+      if (ghost === eatenGhost) continue;
+      expect(ghost.mode).toBe('scared');
+    }
+  });
+
+  it('[US-009#2] reverts to the current phase mode and restores speed once the scared duration elapses', () => {
+    const ghosts = makeGhosts();
+    const loop = new GameLoop({ level: 1, ghosts, getPacManState: makePacmanState });
+    const { scaredDurationMs } = getLevelConfig(1);
+
+    loop.onPowerPelletEaten();
+    loop.tick(scaredDurationMs);
+
+    for (const ghost of ghosts) {
+      expect(ghost.mode).toBe(loop.getPhase());
+      expect(ghost.speed).toBe(1);
+    }
+  });
+});

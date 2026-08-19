@@ -18,6 +18,9 @@ import type { LevelConfig } from '../types';
 /** The two alternating ghost-mode phases this loop drives. */
 export type ScatterChasePhase = 'scatter' | 'chase';
 
+/** Speed multiplier applied to a ghost's base speed while scared. */
+const SCARED_SPEED_MULTIPLIER = 0.5;
+
 export interface GameLoopOptions {
   /** The starting level; determines scatter/chase durations and speeds. */
   level: number;
@@ -38,6 +41,8 @@ export class GameLoop {
   private levelConfig: LevelConfig;
   private phase: ScatterChasePhase = 'scatter';
   private phaseElapsedMs = 0;
+  private scaredActive = false;
+  private scaredElapsedMs = 0;
   private readonly targets = new Map<GhostName, GridPosition>();
 
   constructor(options: GameLoopOptions) {
@@ -69,11 +74,37 @@ export class GameLoop {
 
   /**
    * Advances the loop by `deltaMs` milliseconds: progresses the scatter/
-   * chase phase timer (flipping all ghosts' modes if the phase elapsed)
-   * and recomputes each ghost's target tile for the current phase.
+   * chase phase timer (flipping all ghosts' modes if the phase elapsed),
+   * counts down any active scared period (restoring normal mode/speed once
+   * it expires), and recomputes each ghost's target tile for the current
+   * phase.
    */
   tick(deltaMs: number): void {
     this.advancePhaseTimer(deltaMs);
+    this.advanceScaredTimer(deltaMs);
+    this.updateGhostTargets();
+  }
+
+  /** Whether a frightened (scared) period is currently in effect. */
+  isScaredActive(): boolean {
+    return this.scaredActive;
+  }
+
+  /**
+   * Called when Pac-Man eats a power pellet. Every ghost not currently in
+   * `eaten` mode immediately reverses direction, switches to `scared` mode,
+   * and slows down; the scared duration timer (from the current level's
+   * config) starts counting down from zero.
+   */
+  onPowerPelletEaten(): void {
+    for (const ghost of this.ghosts) {
+      if (ghost.mode === 'eaten') {
+        continue;
+      }
+      ghost.enterScaredMode(SCARED_SPEED_MULTIPLIER);
+    }
+    this.scaredActive = true;
+    this.scaredElapsedMs = 0;
     this.updateGhostTargets();
   }
 
@@ -91,6 +122,27 @@ export class GameLoop {
       this.phaseElapsedMs -= this.currentPhaseDurationMs();
       this.phase = this.phase === 'scatter' ? 'chase' : 'scatter';
       this.applyPhaseToGhosts();
+    }
+  }
+
+  private advanceScaredTimer(deltaMs: number): void {
+    if (!this.scaredActive) {
+      return;
+    }
+
+    this.scaredElapsedMs += deltaMs;
+    if (this.scaredElapsedMs < this.levelConfig.scaredDurationMs) {
+      return;
+    }
+
+    this.scaredActive = false;
+    this.scaredElapsedMs = 0;
+    for (const ghost of this.ghosts) {
+      if (ghost.mode !== 'scared') {
+        continue;
+      }
+      ghost.restoreBaseSpeed();
+      ghost.setMode(this.phase);
     }
   }
 
