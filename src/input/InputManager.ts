@@ -131,21 +131,21 @@ export class InputManager {
 
   attach(target: EventTarget = window): () => void {
     target.addEventListener('keydown', this.handleKeyDown as EventListener);
-    target.addEventListener('touchstart', this.handleTouchStart as EventListener, {
+    target.addEventListener('touchstart', this.handleTouchStart as unknown as EventListener, {
       passive: true,
     } as AddEventListenerOptions);
-    target.addEventListener('touchmove', this.handleTouchMove as EventListener, {
+    target.addEventListener('touchmove', this.handleTouchMove as unknown as EventListener, {
       passive: false,
     } as AddEventListenerOptions);
-    target.addEventListener('touchend', this.handleTouchEnd as EventListener);
+    target.addEventListener('touchend', this.handleTouchEnd as unknown as EventListener);
     return () => this.detach(target);
   }
 
   detach(target: EventTarget = window): void {
     target.removeEventListener('keydown', this.handleKeyDown as EventListener);
-    target.removeEventListener('touchstart', this.handleTouchStart as EventListener);
-    target.removeEventListener('touchmove', this.handleTouchMove as EventListener);
-    target.removeEventListener('touchend', this.handleTouchEnd as EventListener);
+    target.removeEventListener('touchstart', this.handleTouchStart as unknown as EventListener);
+    target.removeEventListener('touchmove', this.handleTouchMove as unknown as EventListener);
+    target.removeEventListener('touchend', this.handleTouchEnd as unknown as EventListener);
   }
 
   setDirection(direction: Direction): void {

@@ -3,7 +3,6 @@ import {
   DEFAULT_PALETTE,
   COLORBLIND_PALETTE,
   getPalette,
-  type GhostPalette,
   type PaletteSet,
 } from './palettes';
 

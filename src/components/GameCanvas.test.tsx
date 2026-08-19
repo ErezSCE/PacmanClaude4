@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render } from '@testing-library/react';
 import { GameCanvas, computeCanvasScale } from './GameCanvas';
 import * as storage from '../services/storage';
-import { getPalette } from '../data/palettes';
 
 /**
  * Minimal ResizeObserver mock for jsdom, which does not implement it.
