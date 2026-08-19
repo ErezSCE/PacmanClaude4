@@ -20,8 +20,7 @@ export const HUD: React.FC<HUDProps> = ({ scoreService, gameStateMachine }) => {
       setScore(scoreService.getScore());
     };
 
-    scoreService.subscribe(handleScoreChange);
-    return () => scoreService.unsubscribe(handleScoreChange);
+    return scoreService.subscribe(handleScoreChange);
   }, [scoreService]);
 
   useEffect(() => {
@@ -29,8 +28,7 @@ export const HUD: React.FC<HUDProps> = ({ scoreService, gameStateMachine }) => {
       setLives(gameStateMachine.getLives());
     };
 
-    gameStateMachine.subscribe(handleStateChange);
-    return () => gameStateMachine.unsubscribe(handleStateChange);
+    return gameStateMachine.subscribe(handleStateChange);
   }, [gameStateMachine]);
 
   return (

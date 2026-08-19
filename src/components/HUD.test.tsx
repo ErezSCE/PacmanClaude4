@@ -77,24 +77,32 @@ describe('HUD Component', () => {
   });
 
   it('unsubscribes from scoreService on unmount', () => {
-    const unsubscribeSpy = vi.spyOn(scoreService, 'unsubscribe');
+    const unsubscribeSpy = vi.fn();
+    const subscribeSpy = vi
+      .spyOn(scoreService, 'subscribe')
+      .mockReturnValue(unsubscribeSpy);
     const { unmount } = render(
       <HUD scoreService={scoreService} gameStateMachine={gameStateMachine} />
     );
 
     unmount();
 
+    expect(subscribeSpy).toHaveBeenCalled();
     expect(unsubscribeSpy).toHaveBeenCalled();
   });
 
   it('unsubscribes from gameStateMachine on unmount', () => {
-    const unsubscribeSpy = vi.spyOn(gameStateMachine, 'unsubscribe');
+    const unsubscribeSpy = vi.fn();
+    const subscribeSpy = vi
+      .spyOn(gameStateMachine, 'subscribe')
+      .mockReturnValue(unsubscribeSpy);
     const { unmount } = render(
       <HUD scoreService={scoreService} gameStateMachine={gameStateMachine} />
     );
 
     unmount();
 
+    expect(subscribeSpy).toHaveBeenCalled();
     expect(unsubscribeSpy).toHaveBeenCalled();
   });
 });
