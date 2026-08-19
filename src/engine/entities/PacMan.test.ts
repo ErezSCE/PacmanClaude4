@@ -81,7 +81,7 @@ describe('PacMan', () => {
 
     it('[US-002#1] should stop moving when hitting a wall in the current direction', () => {
       pacman.currentDirection = 'right';
-      const isWall = (x: number, y: number) => x === 7; // Wall at x=7
+      const isWall = (x: number) => x === 7; // Wall at x=7
 
       const startX = pacman.x;
       pacman.update(isWall); // Move to 6
@@ -96,7 +96,7 @@ describe('PacMan', () => {
 
     it('[US-002#1] should maintain current direction when blocked by wall', () => {
       pacman.currentDirection = 'right';
-      const isWall = (x: number, y: number) => x === 6; // Wall immediately ahead
+      const isWall = (x: number) => x === 6; // Wall immediately ahead
 
       pacman.update(isWall);
       expect(pacman.x).toBe(5); // No movement
@@ -153,7 +153,7 @@ describe('PacMan', () => {
 
     it('[US-002#2] should not apply queued direction if blocked by wall', () => {
       pacman.currentDirection = 'right';
-      const isWall = (x: number, y: number) => x === 4; // Wall to the left
+      const isWall = (x: number) => x === 4; // Wall to the left
 
       pacman.setQueuedDirection('left');
       pacman.update(isWall);
@@ -166,7 +166,7 @@ describe('PacMan', () => {
 
     it('[US-002#2] should keep queued direction until it becomes valid', () => {
       pacman.currentDirection = 'right';
-      const isWall = (x: number, y: number) => x === 4; // Wall to the left
+      const isWall = (x: number) => x === 4; // Wall to the left
 
       pacman.setQueuedDirection('left');
       pacman.update(isWall);
@@ -244,7 +244,7 @@ describe('PacMan', () => {
     });
 
     it('[US-002#3] should freeze chomp animation at frame 0 when stationary', () => {
-      const isWall = (x: number, y: number) => x === 6; // Wall immediately ahead
+      const isWall = (x: number) => x === 6; // Wall immediately ahead
 
       pacman.currentDirection = 'right';
       pacman.update(isWall); // Try to move but blocked
@@ -260,7 +260,7 @@ describe('PacMan', () => {
     });
 
     it('[US-002#3] should resume animation when movement resumes', () => {
-      const isWallAhead = (x: number, y: number) => x === 6;
+      const isWallAhead = (x: number) => x === 6;
       const isWallCleared = () => false;
 
       pacman.currentDirection = 'right';
@@ -290,7 +290,7 @@ describe('PacMan', () => {
   describe('[US-002#4] stops exactly at wall boundary without clipping', () => {
     it('[US-002#4] should stop exactly one tile before a wall when moving right', () => {
       pacman.currentDirection = 'right';
-      const isWall = (x: number, y: number) => x === 8; // Wall at x=8
+      const isWall = (x: number) => x === 8; // Wall at x=8
 
       const startX = pacman.x;
       pacman.update(isWall); // Move to 6
@@ -306,7 +306,7 @@ describe('PacMan', () => {
     it('[US-002#4] should stop exactly one tile before a wall when moving left', () => {
       pacman.x = 10;
       pacman.currentDirection = 'left';
-      const isWall = (x: number, y: number) => x === 7; // Wall at x=7
+      const isWall = (x: number) => x === 7; // Wall at x=7
 
       pacman.update(isWall); // Move to 9
       expect(pacman.x).toBe(9);
@@ -320,7 +320,10 @@ describe('PacMan', () => {
 
     it('[US-002#4] should stop exactly one tile before a wall when moving up', () => {
       pacman.currentDirection = 'up';
-      const isWall = (x: number, y: number) => y === 2; // Wall at y=2
+      const isWall = (x: number, y: number) => {
+        void x;
+        return y === 2; // Wall at y=2
+      };
 
       pacman.update(isWall); // Move to 4
       expect(pacman.y).toBe(4);
@@ -334,7 +337,10 @@ describe('PacMan', () => {
 
     it('[US-002#4] should stop exactly one tile before a wall when moving down', () => {
       pacman.currentDirection = 'down';
-      const isWall = (x: number, y: number) => y === 8; // Wall at y=8
+      const isWall = (x: number, y: number) => {
+        void x;
+        return y === 8; // Wall at y=8
+      };
 
       pacman.update(isWall); // Move to 6
       expect(pacman.y).toBe(6);
@@ -367,7 +373,7 @@ describe('PacMan', () => {
 
     it('[US-002#4] should handle multiple walls correctly', () => {
       pacman.currentDirection = 'right';
-      const isWall = (x: number, y: number) => x === 8 || x === 10; // Walls at x=8 and x=10
+      const isWall = (x: number) => x === 8 || x === 10; // Walls at x=8 and x=10
 
       pacman.update(isWall); // Move to 6
       expect(pacman.x).toBe(6);
@@ -458,7 +464,8 @@ describe('PacMan', () => {
     });
 
     it('should maintain state through multiple blocked attempts', () => {
-      const isWall = (x: number, y: number) => x === 6; // Wall immediately ahead
+      // Wall immediately ahead in both the current ('right') and queued ('up') directions
+      const isWall = (x: number, y: number) => x === 6 || y === 4;
 
       pacman.currentDirection = 'right';
       pacman.setQueuedDirection('up');
