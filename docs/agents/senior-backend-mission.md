@@ -1,22 +1,40 @@
-# Senior Backend Developer Mission Report — ASSIGN-012
+# Senior Backend Mission — ASSIGN-013 (US-007)
 
-**Agent**: senior-backend  
-**Generated**: 2026-08-19T14:58:28.981Z
+## Status: COMPLETE (verified via static review)
 
----
+All required code was implemented in a prior generation on this branch:
 
-## Branch: pacmanclaude4/pacman/feature/us-006-012-ghost-ai
+- `src/engine/ai/ghostAI.ts` — `getScatterTarget(ghost)` returns each ghost's
+  fixed `scatterTarget` corner (set at construction: Blinky top-right,
+  Pinky top-left, Inky bottom-right, Clyde bottom-left).
+- `src/engine/levels/levelConfig.ts` — `getLevelConfig(level)` returns a
+  7000ms scatter / 20000ms chase duration pair (constant across levels per
+  the classic timing table), plus speed/scared duration scaling with
+  repeat-at-cap behavior beyond level 20.
+- `src/engine/GameLoop.ts` — `GameLoop`/`createGameLoop` drive a per-level
+  scatter<->chase phase timer (`advancePhaseTimer`), correctly carrying over
+  remainder time across multiple phase boundaries crossed in a single large
+  tick, applying the new mode to all four ghosts simultaneously
+  (`applyPhaseToGhosts`) while leaving `scared`/`eaten` ghosts untouched, and
+  recomputing each ghost's target tile every tick via `getScatterTarget`
+  (scatter phase) or `chooseTarget` (chase phase).
+- `src/engine/GameLoop.test.ts` — unit tests tagged `[US-007#1]`,
+  `[US-007#2]`, `[US-007#3]` covering scatter-corner targeting, timed
+  scatter->chase->scatter flips (including multi-boundary ticks and
+  per-level duration differences), and simultaneous mode application to all
+  four ghosts (with scared-ghost exclusion).
 
-## Assignment: ASSIGN-012
+## Verification performed this generation
 
-## Files Changed
-
-- **created** `src/engine/entities/Ghost.ts` — Implemented Ghost entity class with GhostName type, GridPosition interface, and state fields (position, direction, mode, speed) plus setMode/setDirection/moveTo methods.
-- **created** `src/engine/ai/ghostAI.ts` — Implemented chooseTarget and getScatterTarget with distinct personalities: Blinky direct chase, Pinky 4-tile ambush ahead, Inky flank via Blinky's position, Clyde chase/scatter switch based on distance threshold.
-- **created** `src/engine/entities/Ghost.test.ts` — Unit tests covering Ghost entity construction, defaults, and state mutators (setMode, setDirection, moveTo).
-- **created** `src/engine/ai/ghostAI.test.ts` — Tagged unit tests [US-006#1..#4] verifying Blinky chase-to-Pac-Man-tile, Pinky ambush-ahead offset, Inky flank calculation relative to Blinky, and Clyde's chase/scatter distance-based switch.
-
-## Notes
-
-Implemented ASSIGN-012: Ghost entity (src/engine/entities/Ghost.ts) and ghost AI targeting (src/engine/ai/ghostAI.ts) exactly at the repo-contract-declared paths (MOD-GHOST, MOD-GHOST-AI). Both modules are self-contained — chooseTarget takes a minimal structural PacManState (position + direction) and a Ghost reference for Blinky rather than importing the not-yet-created Maze/PacMan modules, keeping the project runnable and decoupled from other in-flight assignments. Target-selection math verified by hand: Pinky offsets 4 tiles in Pac-Man's direction; Inky reflects Blinky's position through a pivot 2 tiles ahead of Pac-Man; Clyde chases directly beyond an 8-tile Manhattan-distance threshold and otherwise retreats to its scatter corner; Blinky always targets Pac-Man's tile in chase mode and the scatter corner in scatter mode. All new types (GhostName, GridPosition, PacManState) and constants are used within the same files — no dead code. Shell/test execution tools were unavailable in this environment (all run_command invocations returned no usable output), so tests could not be executed live; code was manually traced against the test assertions to confirm correctness, and matches existing conventions/type definitions in the frozen src/types/index.ts exactly (Direction, GhostMode unions).
-
+The sandboxed `run_command` tool has host shell execution hard-disabled in
+this environment (`Host shell execution is disabled (SHELL_ALLOW_HOST=false)`),
+so `vitest` could not be executed directly. In its place, every file
+(`GameLoop.ts`, `GameLoop.test.ts`, `levelConfig.ts`, `levelConfig.test.ts`,
+`ghostAI.ts`, `Ghost.ts`, `src/types/index.ts`) was re-read in full and each
+test scenario was traced step-by-step against the actual implementation
+logic (phase-timer subtraction/carry-over arithmetic, scared/eaten
+exclusion, per-level duration lookup, scatter-corner assignment). All
+imports resolve to the correct declared repo-contract paths and all type
+signatures (`Ghost`, `GhostName`, `GridPosition`, `PacManState`,
+`LevelConfig`, `GhostMode`) match across call sites. No defects were found;
+no source changes were necessary.
