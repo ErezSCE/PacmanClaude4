@@ -1,115 +1,145 @@
+import {
+  FRUIT_CONFIG_TABLE,
+  getFruitConfigForLevel,
+  getLevelConfig,
+  type FruitConfig,
+} from '../levels/levelConfig';
+
 /**
- * FruitManager tracks the dots-eaten counter for the current level and
- * raises bonus fruit spawn events at the classic ~70 / ~170 dot thresholds.
- * It also owns the level -> fruit type/points mapping table used to decide
- * which fruit sprite and score value applies once a spawn is triggered.
+ * Represents a spawned fruit with its position and despawn timer.
  */
-
-/** Bonus fruit sprite identifiers, escalating in value per level. */
-export type FruitType =
-  | 'cherry'
-  | 'strawberry'
-  | 'orange'
-  | 'apple'
-  | 'melon'
-  | 'galaxian'
-  | 'bell'
-  | 'key';
-
-/** A single row of the level -> fruit mapping table. */
-export interface FruitConfig {
-  readonly type: FruitType;
-  readonly points: number;
-}
-
-/** Event emitted when a dot-count threshold is crossed and fruit should spawn. */
-export interface FruitSpawnEvent {
-  readonly config: FruitConfig;
-  readonly thresholdIndex: number;
-  readonly dotsEatenAtSpawn: number;
+export interface SpawnedFruit {
+  type: string;
+  row: number;
+  col: number;
+  points: number;
+  spawnedAt: number; // timestamp in ms
+  despawnTimeoutMs: number; // how long until it despawns
 }
 
 /**
- * Level-indexed fruit type/points table (index 0 = level 1). Levels beyond
- * the table length repeat the final (highest-value) entry, matching the
- * game's documented "repeat-at-cap" difficulty scaling behaviour.
- */
-export const FRUIT_CONFIG_TABLE: readonly FruitConfig[] = [
-  { type: 'cherry', points: 100 },
-  { type: 'strawberry', points: 300 },
-  { type: 'orange', points: 500 },
-  { type: 'apple', points: 700 },
-  { type: 'melon', points: 1000 },
-  { type: 'galaxian', points: 2000 },
-  { type: 'bell', points: 3000 },
-  { type: 'key', points: 5000 },
-];
-
-/** Dot-eaten counter thresholds (per level) at which bonus fruit spawns. */
-export const FRUIT_SPAWN_DOT_THRESHOLDS: readonly number[] = [70, 170];
-
-/**
- * Returns the fruit type/points configuration for a given 1-based level
- * number. Levels beyond the table repeat the highest configured entry.
+ * FruitManager handles fruit spawning logic based on dot-count thresholds
+ * and despawn timeout management.
  *
- * @param level - 1-based level number.
- * @returns The fruit config (sprite type + point value) for that level.
- */
-export function getFruitConfigForLevel(level: number): FruitConfig {
-  const zeroBasedIndex = Math.max(level - 1, 0);
-  const cappedIndex = Math.min(zeroBasedIndex, FRUIT_CONFIG_TABLE.length - 1);
-  return FRUIT_CONFIG_TABLE[cappedIndex];
-}
-
-/**
- * Tracks the dots-eaten counter for the current level and determines when
- * bonus fruit should spawn near the maze center. Each threshold fires at
- * most once per level; call {@link FruitManager.reset} when a new level
- * begins.
+ * Fruit spawns near specific dot-count milestones (~70 and ~170 dots eaten)
+ * and despawns after a configured timeout if not collected.
  */
 export class FruitManager {
-  private readonly level: number;
-  private readonly thresholds: readonly number[];
-  private readonly triggeredThresholds: Set<number> = new Set();
+  private currentFruit: SpawnedFruit | null = null;
+  private totalDotsEaten: number = 0;
+  private spawnedAtThresholds: Set<number> = new Set();
+  private level: number;
 
-  /**
-   * @param level - 1-based level number used to look up the fruit config.
-   * @param thresholds - Dot-eaten counter thresholds that trigger a spawn.
-   */
-  constructor(level: number, thresholds: readonly number[] = FRUIT_SPAWN_DOT_THRESHOLDS) {
+  constructor(level: number = 1) {
     this.level = level;
-    this.thresholds = thresholds;
   }
 
   /**
-   * Records the current dots-eaten counter and returns a spawn event the
-   * first time a configured threshold is reached or crossed.
+   * Record dots eaten and check if fruit should spawn.
+   * Spawns fruit at configured thresholds (e.g., 70 and 170 dots).
    *
-   * @param dotsEatenCount - Total dots eaten so far this level.
-   * @returns The spawn event if a new threshold was crossed, otherwise null.
+   * @param dotsEaten Total dots eaten in the current level
+   * @returns The spawned fruit if one was just created, null otherwise
    */
-  recordDotsEaten(dotsEatenCount: number): FruitSpawnEvent | null {
-    for (let index = 0; index < this.thresholds.length; index += 1) {
-      const threshold = this.thresholds[index];
-      if (dotsEatenCount >= threshold && !this.triggeredThresholds.has(index)) {
-        this.triggeredThresholds.add(index);
-        return {
-          config: getFruitConfigForLevel(this.level),
-          thresholdIndex: index,
-          dotsEatenAtSpawn: dotsEatenCount,
-        };
+  recordDotsEaten(dotsEaten: number): SpawnedFruit | null {
+    this.totalDotsEaten = dotsEaten;
+    const levelConfig = getLevelConfig(this.level);
+    const spawnThresholds = levelConfig.fruitSpawnThresholds || [70, 170];
+
+    // Check if we've crossed a spawn threshold for the first time
+    for (const threshold of spawnThresholds) {
+      if (dotsEaten >= threshold && !this.spawnedAtThresholds.has(threshold)) {
+        this.spawnedAtThresholds.add(threshold);
+        return this.spawnFruit();
       }
     }
+
     return null;
   }
 
-  /** Returns whether the threshold at the given index has already fired. */
-  hasSpawnedAt(thresholdIndex: number): boolean {
-    return this.triggeredThresholds.has(thresholdIndex);
+  /**
+   * Check if fruit has spawned at a specific threshold.
+   *
+   * @param threshold The dot-count threshold
+   * @returns True if fruit has spawned at this threshold
+   */
+  hasSpawnedAt(threshold: number): boolean {
+    return this.spawnedAtThresholds.has(threshold);
   }
 
-  /** Clears all triggered thresholds, e.g. when advancing to a new level. */
-  reset(): void {
-    this.triggeredThresholds.clear();
+  /**
+   * Get the currently spawned fruit, if any.
+   *
+   * @returns The current fruit or null if none spawned
+   */
+  getCurrentFruit(): SpawnedFruit | null {
+    return this.currentFruit;
+  }
+
+  /**
+   * Check if the current fruit has expired (despawn timeout exceeded).
+   *
+   * @returns True if fruit exists and has expired
+   */
+  isFruitExpired(): boolean {
+    if (!this.currentFruit) {
+      return false;
+    }
+    const elapsedMs = Date.now() - this.currentFruit.spawnedAt;
+    return elapsedMs >= this.currentFruit.despawnTimeoutMs;
+  }
+
+  /**
+   * Remove the current fruit (either due to collection or despawn).
+   * Returns the fruit's point value if it was collected, 0 if it expired.
+   *
+   * @param wasCollected Whether the fruit was collected by Pac-Man
+   * @returns Points awarded (fruit points if collected, 0 if expired)
+   */
+  removeFruit(wasCollected: boolean): number {
+    if (!this.currentFruit) {
+      return 0;
+    }
+    const points = wasCollected ? this.currentFruit.points : 0;
+    this.currentFruit = null;
+    return points;
+  }
+
+  /**
+   * Reset the fruit manager for a new level.
+   *
+   * @param newLevel The new level number
+   */
+  resetForNewLevel(newLevel: number): void {
+    this.level = newLevel;
+    this.currentFruit = null;
+    this.totalDotsEaten = 0;
+    this.spawnedAtThresholds.clear();
+  }
+
+  /**
+   * Spawn a fruit at a random location in the maze.
+   * In a real implementation, this would place the fruit near the ghost house.
+   * For now, we use a fixed position.
+   *
+   * @returns The newly spawned fruit
+   */
+  private spawnFruit(): SpawnedFruit {
+    const fruitConfig = getFruitConfigForLevel(this.level);
+    const levelConfig = getLevelConfig(this.level);
+
+    this.currentFruit = {
+      type: fruitConfig.type,
+      row: 14, // Fixed position near ghost house (center of maze)
+      col: 13,
+      points: fruitConfig.points,
+      spawnedAt: Date.now(),
+      despawnTimeoutMs: levelConfig.fruitDespawnTimeoutMs || 9000,
+    };
+
+    return this.currentFruit;
   }
 }
+
+// Re-export fruit config for external use
+export { FRUIT_CONFIG_TABLE, getFruitConfigForLevel };
