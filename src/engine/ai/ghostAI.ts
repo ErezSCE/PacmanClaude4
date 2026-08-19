@@ -4,7 +4,7 @@ import { Maze } from '../maze/MazeMap';
 
 /** Choose a target tile for the given ghost based on its mode and AI personality. */
 export function chooseTarget(
-  ghost: Ghost,
+  _ghost: Ghost,
   pacman: PacMan,
   _blinky: Ghost | null,
   _maze: Maze,

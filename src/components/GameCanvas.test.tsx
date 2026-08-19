@@ -39,20 +39,20 @@ function installFakeContext() {
  * forever recursively within a synchronous test. */
 function installSingleTickRaf() {
   let calls = 0;
-  const rafSpy = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback) => {
+  const rafSpy = vi.spyOn(window, 'requestAnimationFrame').mockImplementation(((cb: FrameRequestCallback) => {
     calls += 1;
     if (calls === 1) {
       cb(0);
     }
     return calls;
-  });
-  const cancelRafSpy = vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => undefined);
+  }) as typeof window.requestAnimationFrame);
+  const cancelRafSpy = vi.spyOn(window, 'cancelAnimationFrame').mockImplementation((() => undefined) as typeof window.cancelAnimationFrame);
   return { rafSpy, cancelRafSpy };
 }
 
 describe('GameCanvas', () => {
-  let rafSpy: ReturnType<typeof vi.spyOn>;
-  let cancelRafSpy: ReturnType<typeof vi.spyOn>;
+  let rafSpy: ReturnType<typeof installSingleTickRaf>['rafSpy'];
+  let cancelRafSpy: ReturnType<typeof installSingleTickRaf>['cancelRafSpy'];
 
   beforeEach(() => {
     ({ rafSpy, cancelRafSpy } = installSingleTickRaf());
