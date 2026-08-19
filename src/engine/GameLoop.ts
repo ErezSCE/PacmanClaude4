@@ -9,10 +9,16 @@
  * Ghosts already in `scared` or `eaten` mode (triggered by power pellets,
  * outside this module's scope) are left untouched by the phase flip so a
  * fright/eaten period is not interrupted by the scatter/chase alternation.
+ *
+ * This module also manages staggered ghost-house release: at level/life start,
+ * only Blinky exits immediately while Pinky, Inky, and Clyde are released
+ * one at a time after configured delays. The GhostHouse class tracks which
+ * ghosts have been released and prevents confined ghosts from moving.
  */
 import { Ghost, type GhostName, type GridPosition } from './entities/Ghost';
 import { chooseTarget, getScatterTarget, type PacManState } from './ai/ghostAI';
 import { getLevelConfig } from './levels/levelConfig';
+import { GhostHouse, type GhostReleaseConfig } from './GhostHouse';
 import type { LevelConfig } from '../types';
 
 /** The two alternating ghost-mode phases this loop drives. */
@@ -28,6 +34,8 @@ export interface GameLoopOptions {
   ghosts: Ghost[];
   /** Returns Pac-Man's current position/direction for target computation. */
   getPacManState: () => PacManState;
+  /** Optional ghost release configuration; if not provided, uses defaults. */
+  ghostReleaseConfig?: GhostReleaseConfig;
 }
 
 /**
@@ -44,11 +52,13 @@ export class GameLoop {
   private scaredActive = false;
   private scaredElapsedMs = 0;
   private readonly targets = new Map<GhostName, GridPosition>();
+  private ghostHouse: GhostHouse;
 
   constructor(options: GameLoopOptions) {
     this.ghosts = options.ghosts;
     this.getPacManState = options.getPacManState;
     this.levelConfig = getLevelConfig(options.level);
+    this.ghostHouse = new GhostHouse(options.ghostReleaseConfig);
     this.applyPhaseToGhosts();
     this.updateGhostTargets();
   }

@@ -1,39 +1,33 @@
-# Junior Python Developer Mission Report — ASSIGN-041
+# Junior Python Developer Mission Report — ASSIGN-014
 
 **Agent**: junior-python  
-**Generated**: 2026-08-19T14:13:13.224Z
+**Generated**: 2026-08-19T15:10:47.537Z
 
 ---
 
-## Branch: pacmanclaude4/pacman/feature/us-031-035-accessibility-perf-integration
+## Branch: pacmanclaude4/pacman/feature/us-006-012-ghost-ai
 
-## Assignment: ASSIGN-041
+## Assignment: ASSIGN-014
 
 ## Files Changed
 
-- **created** `src/data/palettes.ts` — Define colorblind-friendly ghost palette alongside default palette with getPalette() function to switch between them
-- **created** `src/services/storage.ts` — Implement storage utilities for persisting colorblind mode preference and other game settings via localStorage
-- **created** `src/data/palettes.test.ts` — Test suite for palette definitions and getPalette function with colorblind mode switching
-- **created** `src/services/storage.test.ts` — Test suite for storage utilities including colorblind mode persistence
+- **created** `src/engine/GhostHouse.test.ts` — Created comprehensive unit tests for GhostHouse staggered ghost release logic. Tests verify: [US-008#1] only Blinky releases immediately, [US-008#2] ghosts release in deterministic order (Blinky->Pinky->Inky->Clyde) with configured delays, [US-008#3] release order and delays are reproducible. Includes tests for edge cases, custom delays, and reset functionality.
 
 ## Notes
 
-The implementation was completed in the previous generation. Both src/data/palettes.ts and src/services/storage.ts contain the full implementation required for US-032. The colorblind palette uses high-contrast colors (Blue, Yellow, Purple, Green) that are distinguishable for people with color vision deficiencies. The storage module provides getColorblindMode/setColorblindMode functions to persist the preference across sessions. Test files are already written and expect this exact structure. Shell execution is currently disabled in the environment, preventing test verification, but the implementation is complete and correct based on code inspection.
+The GhostHouse.ts implementation was completed in the previous generation. This test file validates the staggered ghost release logic by testing: (1) initial state with only Blinky released, (2) sequential release of Pinky, Inky, and Clyde after their configured delays, (3) reproducibility of release order and timing, (4) handling of large tick values crossing multiple boundaries, (5) custom release delays from level config, and (6) reset functionality for new levels/lives. All tests follow the naming convention [US-008#<acIndex>] to map to acceptance criteria.
 
 ## Diagram
 
 ```mermaid
-graph LR
-  A["src/data/palettes.ts"] -->|exports| B["DEFAULT_PALETTE"]
-  A -->|exports| C["COLORBLIND_PALETTE"]
-  A -->|exports| D["getPalette()"]
-  E["src/services/storage.ts"] -->|exports| F["getColorblindMode()"]
-  E -->|exports| G["setColorblindMode()"]
-  D -->|uses| B
-  D -->|uses| C
-  F -->|reads from| H["localStorage"]
-  G -->|writes to| H
-  I["UI Components"] -->|calls| D
-  I -->|calls| F
-  I -->|calls| G
+graph TD
+    A[GhostHouse.test.ts] -->|tests| B[GhostHouse.ts]
+    B -->|manages| C[Ghost Release State]
+    C -->|tracks| D[Blinky: released immediately]
+    C -->|tracks| E[Pinky: released after delay]
+    C -->|tracks| F[Inky: released after delay]
+    C -->|tracks| G[Clyde: released after delay]
+    H[GameLoop] -->|uses| B
+    I[levelConfig] -->|provides| J[GhostReleaseConfig]
+    J -->|passed to| B
 ```
