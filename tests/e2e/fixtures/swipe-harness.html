@@ -1,0 +1,30 @@
+<!doctype html>
+<!--
+  Minimal, self-contained harness used by tests/e2e/swipe.spec.ts to exercise
+  InputManager's swipe-gesture normalization in a real browser without
+  depending on the rest of the (not-yet-wired) UI shell/game loop.
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>InputManager swipe harness</title>
+  </head>
+  <body>
+    <canvas id="game-canvas" width="400" height="400"></canvas>
+    <div id="direction">none</div>
+    <script type="module">
+      import { InputManager } from '/src/input/InputManager.ts';
+
+      const directionEl = document.getElementById('direction');
+      const manager = new InputManager({
+        onDirectionChange: (direction) => {
+          directionEl.textContent = direction;
+        },
+      });
+      manager.attach();
+
+      // Exposed only for debugging/inspection from Playwright if ever needed.
+      window.__inputManager = manager;
+    </script>
+  </body>
+</html>
