@@ -43,6 +43,12 @@ blob-report/
 .playwright/
 .vitest/
 junit.xml
+.angular/
+.turbo/
+.parcel-cache/
+bin/
+*.exe
+*.test
 .conventions/
 .worktrees/
 .worktrees-failed/
