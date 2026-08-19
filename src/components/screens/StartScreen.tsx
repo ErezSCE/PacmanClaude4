@@ -1,57 +1,48 @@
-import { useState } from 'react';
+import { useRef, useEffect } from 'react';
 import { useAutoFocus } from '../../hooks/useAutoFocus';
-import '../../styles/focus.css';
 
-export interface StartScreenProps {
+interface StartScreenProps {
+  highScore: number;
   onStart: () => void;
-  highScore?: number;
-  colorblindPaletteEnabled?: boolean;
-  onToggleColorblindPalette?: (enabled: boolean) => void;
 }
 
-/**
- * Start screen: entry point of the game. Every control is a native,
- * keyboard-operable element (button/checkbox) so Tab/Enter/Space works
- * without any extra key handling.
- */
-export function StartScreen({
-  onStart,
-  highScore = 0,
-  colorblindPaletteEnabled = false,
-  onToggleColorblindPalette,
-}: StartScreenProps): JSX.Element {
-  const startButtonRef = useAutoFocus<HTMLButtonElement>();
-  const [colorblind, setColorblind] = useState(colorblindPaletteEnabled);
+export function StartScreen({ highScore, onStart }: StartScreenProps) {
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  useAutoFocus(buttonRef);
 
-  const handleToggle = (): void => {
-    const next = !colorblind;
-    setColorblind(next);
-    onToggleColorblindPalette?.(next);
-  };
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.key === 'Enter' || e.key === ' ') && buttonRef.current === document.activeElement) {
+        e.preventDefault();
+        onStart();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onStart]);
+
+  const formattedScore = String(highScore).padStart(6, '0');
 
   return (
-    <div className="screen" data-testid="start-screen">
+    <div className="start-screen">
       <h1>PAC-MAN</h1>
-      <p className="hint">High Score: {highScore}</p>
+      
+      <div className="high-score-section">
+        <div className="high-score-label">HIGH SCORE</div>
+        <div className="high-score-value">{formattedScore}</div>
+      </div>
+
       <button
-        ref={startButtonRef}
-        type="button"
-        className="focusable primary-button"
+        ref={buttonRef}
+        className="start-button"
         onClick={onStart}
-        autoFocus
+        aria-label="Start game"
       >
-        Start Game
+        PRESS START
       </button>
-      <label className="focusable" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-        <input
-          type="checkbox"
-          className="focusable"
-          checked={colorblind}
-          onChange={handleToggle}
-        />
-        Colorblind-friendly ghost palette
-      </label>
-      <p className="hint">Use arrow keys or WASD to move. P/Esc to pause. M to mute.</p>
+      
+      <div className="start-hint">or press ENTER</div>
     </div>
   );
 }

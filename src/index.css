@@ -11,4 +11,86 @@ body,
   height: 100%;
   font-family: 'Courier New', monospace;
   background: #000;
+  color: #fff;
+}
+
+.start-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: #000;
+}
+
+.start-screen-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  padding: 2rem;
+  text-align: center;
+}
+
+.start-screen-title {
+  font-size: 3rem;
+  font-weight: bold;
+  margin: 0;
+  color: #ffb897;
+  letter-spacing: 0.2em;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.start-screen-high-score {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.high-score-label {
+  font-size: 0.9rem;
+  margin: 0;
+  color: #aaa;
+  letter-spacing: 0.1em;
+}
+
+.high-score-value {
+  font-size: 1.5rem;
+  margin: 0;
+  color: #ffb897;
+  font-weight: bold;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.1em;
+}
+
+.start-button {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: bold;
+  color: #000;
+  background: #ffb897;
+  border: 2px solid #ffb897;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.05em;
+}
+
+.start-button:hover {
+  background: #ffc9b8;
+  border-color: #ffc9b8;
+  transform: scale(1.05);
+}
+
+.start-button:active {
+  transform: scale(0.98);
+}
+
+.start-screen-hint {
+  font-size: 0.85rem;
+  color: #888;
+  margin: 0;
+  opacity: 0.8;
 }
