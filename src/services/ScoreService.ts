@@ -33,6 +33,12 @@ const HIGH_SCORES_STORAGE_KEY = 'pacman_high_scores';
 /** Listener callback invoked with the new running total whenever it changes. */
 export type ScoreListener = (score: number) => void;
 
+/** Listener callback invoked when an extra life is awarded. */
+export type ExtraLifeListener = () => void;
+
+/** Score threshold at which an extra life is awarded (10,000 points). */
+export const EXTRA_LIFE_THRESHOLD = 10000;
+
 /**
  * Returns the point value for the ghost-eat combo at the given zero-based
  * index, clamping to the highest configured value once the combo exceeds
@@ -58,6 +64,8 @@ export class ScoreService {
   private total = 0;
   private ghostComboIndex = 0;
   private readonly listeners: Set<ScoreListener> = new Set();
+  private readonly extraLifeListeners: Set<ExtraLifeListener> = new Set();
+  private extraLifeThresholdCrossed = false;
 
   /** Returns the current running score total. */
   getScore(): number {
@@ -110,6 +118,7 @@ export class ScoreService {
   reset(): void {
     this.total = 0;
     this.ghostComboIndex = 0;
+    this.extraLifeThresholdCrossed = false;
     this.notify();
   }
 
@@ -127,8 +136,34 @@ export class ScoreService {
     };
   }
 
+  /**
+   * Subscribes to extra-life awards.
+   *
+   * @param listener - Called synchronously when the score crosses the 10,000
+   *   point threshold (exactly once per game).
+   * @returns An unsubscribe function.
+   */
+  subscribeToExtraLife(listener: ExtraLifeListener): () => void {
+    this.extraLifeListeners.add(listener);
+    return () => {
+      this.extraLifeListeners.delete(listener);
+    };
+  }
+
   private applyPoints(points: number): number {
+    const previousTotal = this.total;
     this.total += points;
+
+    // Check if we've crossed the 10,000-point threshold for the first time
+    if (
+      !this.extraLifeThresholdCrossed &&
+      previousTotal < EXTRA_LIFE_THRESHOLD &&
+      this.total >= EXTRA_LIFE_THRESHOLD
+    ) {
+      this.extraLifeThresholdCrossed = true;
+      this.notifyExtraLife();
+    }
+
     this.notify();
     return this.total;
   }
@@ -136,6 +171,12 @@ export class ScoreService {
   private notify(): void {
     for (const listener of this.listeners) {
       listener(this.total);
+    }
+  }
+
+  private notifyExtraLife(): void {
+    for (const listener of this.extraLifeListeners) {
+      listener();
     }
   }
 }

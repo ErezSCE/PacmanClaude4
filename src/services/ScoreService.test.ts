@@ -179,6 +179,94 @@ describe('ScoreService', () => {
     });
   });
 
+  describe('[US-017#1] extra-life award at 10,000 points', () => {
+    it('triggers extra-life listener exactly once when score crosses 10,000', () => {
+      const service = new ScoreService();
+      const extraLifeEvents: number = 0;
+      let extraLifeCount = 0;
+      service.subscribeToExtraLife(() => {
+        extraLifeCount += 1;
+      });
+
+      // Add points to reach exactly 10,000
+      service.addDot(); // 10
+      for (let i = 0; i < 999; i += 1) {
+        service.addDot(); // 10 * 1000 = 10,000
+      }
+
+      expect(extraLifeCount).toBe(1);
+      expect(service.getScore()).toBe(10000);
+    });
+
+    it('does not trigger extra-life listener again when score increases beyond 10,000', () => {
+      const service = new ScoreService();
+      let extraLifeCount = 0;
+      service.subscribeToExtraLife(() => {
+        extraLifeCount += 1;
+      });
+
+      // Reach 10,000
+      for (let i = 0; i < 1000; i += 1) {
+        service.addDot(); // 10 * 1000 = 10,000
+      }
+
+      expect(extraLifeCount).toBe(1);
+
+      // Add more points
+      service.addDot(); // 10,010
+      service.addPellet(); // 10,060
+
+      expect(extraLifeCount).toBe(1);
+      expect(service.getScore()).toBe(10060);
+    });
+
+    it('resets the extra-life threshold flag when score is reset', () => {
+      const service = new ScoreService();
+      let extraLifeCount = 0;
+      service.subscribeToExtraLife(() => {
+        extraLifeCount += 1;
+      });
+
+      // Reach 10,000
+      for (let i = 0; i < 1000; i += 1) {
+        service.addDot();
+      }
+
+      expect(extraLifeCount).toBe(1);
+
+      // Reset the game
+      service.reset();
+
+      // Reach 10,000 again
+      for (let i = 0; i < 1000; i += 1) {
+        service.addDot();
+      }
+
+      expect(extraLifeCount).toBe(2);
+    });
+
+    it('triggers extra-life listener when crossing 10,000 via a single large point source', () => {
+      const service = new ScoreService();
+      let extraLifeCount = 0;
+      service.subscribeToExtraLife(() => {
+        extraLifeCount += 1;
+      });
+
+      // Add 9,990 points via dots
+      for (let i = 0; i < 999; i += 1) {
+        service.addDot();
+      }
+
+      expect(extraLifeCount).toBe(0);
+
+      // Add 100 points via fruit, crossing 10,000
+      service.addFruit(100);
+
+      expect(extraLifeCount).toBe(1);
+      expect(service.getScore()).toBe(10090);
+    });
+  });
+
   describe('high score persistence', () => {
     it('reports a score as a high score when the list has fewer than 10 entries', () => {
       expect(isHighScore(50)).toBe(true);
