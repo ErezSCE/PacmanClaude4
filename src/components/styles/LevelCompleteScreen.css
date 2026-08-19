@@ -1,0 +1,63 @@
+.level-complete-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  color: #fff;
+  font-family: 'Arial', sans-serif;
+}
+
+.level-complete-content {
+  text-align: center;
+  padding: 2rem;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  max-width: 400px;
+}
+
+.level-complete-title {
+  font-size: 2.5rem;
+  margin: 0 0 1.5rem 0;
+  color: #ffff00;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+  animation: pulse 0.6s ease-in-out;
+}
+
+.level-complete-info {
+  margin: 1.5rem 0;
+}
+
+.level-complete-level {
+  font-size: 1.5rem;
+  margin: 0.5rem 0;
+  color: #00ff00;
+}
+
+.level-complete-score {
+  font-size: 1.25rem;
+  margin: 0.5rem 0;
+  color: #00ffff;
+}
+
+.level-complete-message {
+  font-size: 1rem;
+  margin: 1.5rem 0 0 0;
+  color: #aaa;
+  font-style: italic;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
