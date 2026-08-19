@@ -1,98 +1,61 @@
 /**
- * Ghost house release manager. Tracks which ghosts are still confined to the
- * ghost house and releases them one at a time after configured delays.
- *
- * Release order is deterministic: Blinky -> Pinky -> Inky -> Clyde.
- * Each ghost is released after its configured delay (in milliseconds) elapses
- * from the start of the level/life.
+ * Tracks staggered ghost-house release: at level/life start only Blinky
+ * exits immediately while Pinky, Inky, and Clyde are held in the ghost
+ * house and released one at a time after their configured delays elapse.
+ * Release state is purely time-based (elapsed milliseconds since the last
+ * `reset()`), so repeated `tick()` calls with the same total elapsed time
+ * always yield the same release state regardless of how the ticks are
+ * chunked.
  */
 import type { GhostName } from './entities/Ghost';
 
-/** Configuration for a single ghost's release timing. */
+/** Per-ghost release delay (in milliseconds) since level/life start. */
 export interface GhostReleaseConfig {
-  /** The ghost to release. */
-  name: GhostName;
-  /** Delay in milliseconds before this ghost is released from the house. */
-  delayMs: number;
+  blinky: number;
+  pinky: number;
+  inky: number;
+  clyde: number;
 }
 
+/** Default staggered release delays used when no level-specific config is supplied. */
+export const DEFAULT_GHOST_RELEASE_CONFIG: GhostReleaseConfig = {
+  blinky: 0,
+  pinky: 2000,
+  inky: 4000,
+  clyde: 6000,
+};
+
 /**
- * Manages the staggered release of ghosts from the ghost house.
- * Tracks elapsed time and determines which ghosts are still confined.
+ * Governs which ghosts are still confined to the ghost house and which
+ * have been released to roam the maze, based on elapsed time.
  */
 export class GhostHouse {
-  private readonly releaseConfigs: GhostReleaseConfig[];
-  private releasedGhosts = new Set<GhostName>();
+  private readonly ghostNames: GhostName[];
+  private readonly releaseConfig: GhostReleaseConfig;
   private elapsedMs = 0;
 
-  /**
-   * Creates a new ghost house manager.
-   *
-   * @param releaseConfigs - Array of release configurations in order.
-   *   Typically: Blinky (0ms), Pinky (5000ms), Inky (10000ms), Clyde (15000ms).
-   */
-  constructor(releaseConfigs: GhostReleaseConfig[]) {
-    this.releaseConfigs = releaseConfigs;
-    // Blinky is always released immediately (delay 0).
-    const blinkyConfig = releaseConfigs.find((c) => c.name === 'blinky');
-    if (blinkyConfig && blinkyConfig.delayMs === 0) {
-      this.releasedGhosts.add('blinky');
-    }
+  constructor(ghosts: { name: GhostName }[], releaseConfig: GhostReleaseConfig) {
+    this.ghostNames = ghosts.map((ghost) => ghost.name);
+    this.releaseConfig = releaseConfig;
   }
 
-  /**
-   * Advances the ghost house timer by `deltaMs` milliseconds and releases
-   * any ghosts whose configured delay has elapsed.
-   *
-   * @param deltaMs - Time elapsed since the last tick, in milliseconds.
-   */
+  /** Advances the release timer by `deltaMs` milliseconds. */
   tick(deltaMs: number): void {
     this.elapsedMs += deltaMs;
-
-    for (const config of this.releaseConfigs) {
-      if (!this.releasedGhosts.has(config.name) && this.elapsedMs >= config.delayMs) {
-        this.releasedGhosts.add(config.name);
-      }
-    }
   }
 
-  /**
-   * Checks whether the named ghost has been released from the ghost house.
-   *
-   * @param ghostName - The ghost to check.
-   * @returns True if the ghost has been released; false if still confined.
-   */
-  isReleased(ghostName: GhostName): boolean {
-    return this.releasedGhosts.has(ghostName);
+  /** Whether the named ghost has been released from the ghost house. */
+  isReleased(name: GhostName): boolean {
+    return this.elapsedMs >= this.releaseConfig[name];
   }
 
-  /**
-   * Resets the ghost house to its initial state (all ghosts except Blinky
-   * confined, timer at zero). Called when a new level/life begins.
-   */
+  /** All ghosts currently released, in `ghosts` array order. */
+  getReleasedGhosts(): GhostName[] {
+    return this.ghostNames.filter((name) => this.isReleased(name));
+  }
+
+  /** Reinitializes release state for a new level/life; only Blinky is released again. */
   reset(): void {
-    this.releasedGhosts.clear();
     this.elapsedMs = 0;
-    // Re-release Blinky immediately.
-    const blinkyConfig = this.releaseConfigs.find((c) => c.name === 'blinky');
-    if (blinkyConfig && blinkyConfig.delayMs === 0) {
-      this.releasedGhosts.add('blinky');
-    }
-  }
-
-  /**
-   * Returns the current elapsed time in milliseconds since the ghost house
-   * was initialized or reset. Useful for testing and debugging.
-   */
-  getElapsedMs(): number {
-    return this.elapsedMs;
-  }
-
-  /**
-   * Returns the set of ghosts that have been released so far.
-   * Useful for testing and debugging.
-   */
-  getReleasedGhosts(): Set<GhostName> {
-    return new Set(this.releasedGhosts);
   }
 }

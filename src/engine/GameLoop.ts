@@ -18,7 +18,7 @@
 import { Ghost, type GhostName, type GridPosition } from './entities/Ghost';
 import { chooseTarget, getScatterTarget, type PacManState } from './ai/ghostAI';
 import { getLevelConfig } from './levels/levelConfig';
-import { GhostHouse, type GhostReleaseConfig } from './GhostHouse';
+import { GhostHouse, DEFAULT_GHOST_RELEASE_CONFIG, type GhostReleaseConfig } from './GhostHouse';
 import type { LevelConfig } from '../types';
 
 /** The two alternating ghost-mode phases this loop drives. */
@@ -58,7 +58,10 @@ export class GameLoop {
     this.ghosts = options.ghosts;
     this.getPacManState = options.getPacManState;
     this.levelConfig = getLevelConfig(options.level);
-    this.ghostHouse = new GhostHouse(options.ghostReleaseConfig);
+    this.ghostHouse = new GhostHouse(
+      this.ghosts,
+      options.ghostReleaseConfig ?? DEFAULT_GHOST_RELEASE_CONFIG,
+    );
     this.applyPhaseToGhosts();
     this.updateGhostTargets();
   }
@@ -78,8 +81,14 @@ export class GameLoop {
     this.levelConfig = getLevelConfig(level);
     this.phase = 'scatter';
     this.phaseElapsedMs = 0;
+    this.ghostHouse.reset();
     this.applyPhaseToGhosts();
     this.updateGhostTargets();
+  }
+
+  /** Whether the named ghost has been released from the ghost house. */
+  isGhostReleased(name: GhostName): boolean {
+    return this.ghostHouse.isReleased(name);
   }
 
   /**
@@ -90,6 +99,7 @@ export class GameLoop {
    * phase.
    */
   tick(deltaMs: number): void {
+    this.ghostHouse.tick(deltaMs);
     this.advancePhaseTimer(deltaMs);
     this.advanceScaredTimer(deltaMs);
     this.updateGhostTargets();
@@ -171,6 +181,9 @@ export class GameLoop {
 
     for (const ghost of this.ghosts) {
       if (ghost.mode === 'scared' || ghost.mode === 'eaten') {
+        continue;
+      }
+      if (!this.ghostHouse.isReleased(ghost.name)) {
         continue;
       }
       const target =
